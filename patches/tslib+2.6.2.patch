@@ -1,0 +1,13 @@
+diff --git a/node_modules/tslib/package.json b/node_modules/tslib/package.json
+index 0a1fdec..b627be8 100644
+--- a/node_modules/tslib/package.json
++++ b/node_modules/tslib/package.json
+@@ -42,6 +42,7 @@
+             "default": "./tslib.js"
+         },
+         "./*": "./*",
+-        "./": "./"
++        "./": "./",
++        "./package.json": "./package.json"
+     }
+ }
