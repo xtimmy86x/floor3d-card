@@ -5234,25 +5234,28 @@ export class Floor3dCard extends LitElement {
       const size = marker.size || 48;
       const zzz = document.createElement('div');
       zzz.dataset.zzzOverlay = 'true';
+      // Cover the full wrapper so Z spans are positioned relative to the avatar's
+      // top-left corner, not the wrapper's right edge.
       zzz.style.cssText =
-        'position:absolute;top:0;right:0;display:none;pointer-events:none;overflow:visible;';
-      // Three Z spans with staggered size, position, and animation delay.
+        'position:absolute;top:0;left:0;width:100%;height:100%;display:none;pointer-events:none;overflow:visible;';
+      // Three Z spans: small → medium → large, staggered in position and delay.
+      // left/top are percentages of marker size so they scale with different sizes.
       const zDefs = [
-        { fontSize: 9,  x: 4,   y: -2,  delay: '0s' },
-        { fontSize: 11, x: 10,  y: -9,  delay: '0.5s' },
-        { fontSize: 14, x: 17,  y: -18, delay: '1s' },
+        { fontSize: size * 0.19, left: size * 0.62, top: -size * 0.06, delay: '0s' },
+        { fontSize: size * 0.23, left: size * 0.68, top: -size * 0.22, delay: '0.55s' },
+        { fontSize: size * 0.28, left: size * 0.74, top: -size * 0.40, delay: '1.1s' },
       ];
       for (const d of zDefs) {
         const z = document.createElement('span');
         z.textContent = 'Z';
         z.style.cssText = [
           'position:absolute',
-          `font-size:${d.fontSize}px`,
+          `font-size:${Math.round(d.fontSize)}px`,
           'font-weight:bold',
           'color:rgba(180,220,255,0.95)',
           'text-shadow:0 1px 3px rgba(0,0,0,0.6)',
-          `left:${size * 0.45 + d.x}px`,
-          `top:${-size * 0.15 + d.y}px`,
+          `left:${d.left.toFixed(1)}px`,
+          `top:${d.top.toFixed(1)}px`,
           `animation:f3d-zzz 2.4s ease-in-out ${d.delay} infinite`,
         ].join(';');
         zzz.appendChild(z);
