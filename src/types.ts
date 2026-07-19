@@ -182,6 +182,7 @@ export interface Floor3dCardConfig {
   overlay_font: string;
   overlay_fontsize: string;
   tap_action?: ActionConfig;
+  hold_action?: ActionConfig;
   double_tap_action?: ActionConfig;
   entity: string;
   entity_template: string;

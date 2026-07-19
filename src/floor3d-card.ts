@@ -1013,6 +1013,8 @@ export class Floor3dCard extends LitElement {
         return;
       }
 
+      if (this._handleEntityAction(intersects, 'tap')) return;
+
       this._config.entities.forEach((entity, i) => {
         for (let j = 0; j < this._object_ids[i].objects.length; j++) {
           if (this._object_ids[i].objects[j].object_id == intersects[0].object.name) {
@@ -1050,6 +1052,8 @@ export class Floor3dCard extends LitElement {
     const intersects = this._currentIntersections;
     this._currentIntersections = null;
     if (intersects.length > 0 && intersects[0].object.name != '') {
+      if (this._handleEntityAction(intersects, 'hold')) return;
+
       this._config.entities.forEach((entity, i) => {
         for (let j = 0; j < this._object_ids[i].objects.length; j++) {
           if (this._object_ids[i].objects[j].object_id == intersects[0].object.name) {
@@ -1171,7 +1175,29 @@ export class Floor3dCard extends LitElement {
 
   private _performAction(e: any): void {
     const intersects = this._getintersect(e);
+    if (this._handleEntityAction(intersects, 'double_tap')) return;
     this._defaultaction(intersects);
+  }
+
+  /** Run a standard Home Assistant action configured on the clicked 3D binding. */
+  private _handleEntityAction(
+    intersects: THREE.Intersection[],
+    action: 'tap' | 'hold' | 'double_tap',
+  ): boolean {
+    if (!this._hass || !intersects.length || !intersects[0].object?.name) return false;
+
+    const objectName = intersects[0].object.name;
+    for (let i = 0; i < this._config.entities.length; i++) {
+      const entityConfig = this._config.entities[i];
+      const objects = this._object_ids[i]?.objects || [];
+      const actionConfig = entityConfig[`${action}_action`];
+      if (actionConfig && objects.some((object: any) => object.object_id === objectName)) {
+        handleAction(this, this._hass, entityConfig, action);
+        return true;
+      }
+    }
+
+    return false;
   }
 
   private _getZIndex(toCheck: any): string {
