@@ -4377,6 +4377,12 @@ export class Floor3dCard extends LitElement {
 
     object.applyMatrix4(new THREE.Matrix4().makeTranslation(-pivot.x, -pivot.y, -pivot.z));
     object.position.copy(pivot);
+    // Model objects have matrixAutoUpdate=false (frozen after load for perf).
+    // Without an explicit updateMatrix() the position change above never reaches
+    // matrix/matrixWorld, while the caller's geometry translation (-pivot) is
+    // applied immediately to the vertices — the mesh visibly shifts by -pivot
+    // (e.g. a room base moving when a room entity is configured).
+    object.updateMatrix();
   }
 
   private _rotatedoorpivot(entity: Floor3dCardConfig, index: number) {
