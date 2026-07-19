@@ -228,6 +228,28 @@ entities:
 | `object_id` | string | 3D object name in the model |
 | `entity_template` | string | JS template: `'[[[ if ($entity > 25) { "hot" } ]]]'` |
 | `action` | string | On-click: `more-info`, `overlay`, or `default` |
+| `tap_action` | object | Standard Home Assistant tap action (for example `toggle`, `more-info`, `call-service`, or `navigate`) |
+| `hold_action` | object | Standard Home Assistant hold action |
+| `double_tap_action` | object | Standard Home Assistant double-tap action |
+
+Standard actions work with every `type3d` binding. When an action is omitted, the
+binding keeps its existing Floor3D click behavior.
+
+```yaml
+entities:
+  - entity: input_boolean.living_room
+    type3d: room
+    object_id: room_10_56
+    tap_action:
+      action: toggle
+    hold_action:
+      action: more-info
+    double_tap_action:
+      action: call-service
+      service: script.turn_on
+      service_data:
+        entity_id: script.turn_on_living_room
+```
 
 ---
 
