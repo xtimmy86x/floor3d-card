@@ -3996,34 +3996,28 @@ export class Floor3dCard extends LitElement {
         const _roomMesh: THREE.Mesh = _foundroom as THREE.Mesh;
 
         if (_roomMesh.geometry instanceof THREE.BufferGeometry) {
-          let oldRoomBox = new THREE.Box3().setFromObject(_roomMesh);
-          this._centerobjecttopivot(_roomMesh, oldRoomBox.min);
-          _roomMesh.geometry.applyMatrix4(
-            new THREE.Matrix4().makeTranslation(-oldRoomBox.min.x, -oldRoomBox.min.y, -oldRoomBox.min.z),
-          );
+          // Work exclusively from the world-space bounding box.  The original
+          // implementation re-centered the room mesh pivot and translated its
+          // geometry: that mutation is not world-neutral when the mesh carries
+          // its own local transform (typical of GLB exports) and, with
+          // matrixAutoUpdate frozen after load, visibly shifted the room base.
+          // Nothing ever rotates the source mesh, so no pivot change is needed.
+          const roomBox = new THREE.Box3().setFromObject(_roomMesh);
 
-          let newRoomBox: THREE.Box3 = new THREE.Box3().setFromObject(_roomMesh);
+          const dimensions = new THREE.Vector3().subVectors(roomBox.max, roomBox.min);
+          // Vertical expansion: elevation/2 on both ends, box kept pinned to the floor.
+          dimensions.y += elevation;
 
-          const expansion: THREE.Vector3 = new THREE.Vector3(0, elevation / 2, 0);
-          newRoomBox.expandByVector(expansion);
-
-          const dimensions = new THREE.Vector3().subVectors(newRoomBox.max, newRoomBox.min);
           const newRoomGeometry: THREE.BoxGeometry = new THREE.BoxGeometry(
             dimensions.x - 4,
             dimensions.y - 4,
             dimensions.z - 4,
           );
 
-          //const meshPosition = dimensions.addVectors(newRoomBox.min, newRoomBox.max).multiplyScalar(0.5);
-          const meshPosition = oldRoomBox.min.clone();
-          // move new mesh center so it's aligned with the original object
-          meshPosition.y += 2;
-          meshPosition.x += 2;
-          meshPosition.z += 2;
-
-          //TBD work on position bug
-          //const matrixmesh = new THREE.Matrix4().setPosition(meshPosition);
-          //newRoomGeometry.applyMatrix4(matrixmesh);
+          // BoxGeometry is origin-centered: position its center so the box min
+          // corner sits at roomBox.min + 2 on each axis (the -4 shrink above
+          // leaves a 2-unit inset per side).
+          const meshPosition = roomBox.min.clone().addScaledVector(dimensions, 0.5);
 
           const newRoomMaterial: THREE.MeshPhongMaterial = new THREE.MeshPhongMaterial({
             color: 0xff0000,
@@ -4052,12 +4046,10 @@ export class Floor3dCard extends LitElement {
           const sprite_height: number = entity.room.height ? entity.room.height : 75;
           newSprite.scale.set(sprite_width, sprite_height, 5);
 
-          //TBD work on position bug
-
           const spritePosition = new THREE.Vector3(
-            meshPosition.x + dimensions.x / 2,
-            newRoomBox.max.y + elevation / 2 + sprite_height / 2,
-            meshPosition.z + dimensions.z / 2,
+            meshPosition.x,
+            roomBox.max.y + elevation + sprite_height / 2,
+            meshPosition.z,
           );
           newSprite.visible = false;
 
@@ -4067,21 +4059,11 @@ export class Floor3dCard extends LitElement {
             }
           }
 
-          //this._bboxmodel.add(newSprite);
           this._levels[_roomMesh.userData.level].add(newSprite);
           this._levels[_roomMesh.userData.level].add(newRoomMesh);
 
-          newRoomBox = new THREE.Box3().setFromObject(newRoomMesh);
-          this._centerobjecttopivot(newRoomMesh, newRoomBox.min);
-          newRoomMesh.geometry.applyMatrix4(
-            new THREE.Matrix4().makeTranslation(-newRoomBox.min.x, -newRoomBox.min.y, -newRoomBox.min.z),
-          );
-
-          //const matrixsprite = new THREE.Matrix4().setPosition(new THREE.Vector3(meshPosition.x,newRoomBox.max.y+(elevation / 2)+(sprite_height / 2), meshPosition.z));
-          //newSprite.applyMatrix4(matrixsprite);
-
-          newRoomMesh.position.set(meshPosition.x, meshPosition.y, meshPosition.z);
-          newSprite.position.set(spritePosition.x, spritePosition.y, spritePosition.z);
+          newRoomMesh.position.copy(meshPosition);
+          newSprite.position.copy(spritePosition);
 
           this._updateroomcolor(entity, i);
         }
